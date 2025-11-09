@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>🎓 FASTCoin Faucet</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f9ff;
+      text-align: center;
+      padding: 40px;
+      color: #333;
+    }
+    h1 {
+      color: #0a79ca;
+    }
+    button {
+      background-color: #1cb7c5;
+      color: white;
+      padding: 10px 20px;
+      margin-top: 15px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #0a79ca;
+    }
+    #info {
+      margin-top: 25px;
+      background: white;
+      display: inline-block;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎓 FASTCoin Faucet</h1>
+  <p>Claim 10 FSC tokens every 24 hours on Sepolia Testnet!</p>
+
+  <button onclick="connectWallet()">🔗 Connect MetaMask</button>
+  <button onclick="claimTokens()">💰 Claim 10 FASTCoin</button>
+
+  <div id="info">
+    <p><b>Connected Wallet:</b> <span id="wallet">Not connected</span></p>
+    <p><b>Faucet Balance:</b> <span id="balance">Loading...</span></p>
+    <p><b>Next Claim Available In:</b> <span id="timer">--</span></p>
+  </div>
+
+  <script>
+  const contractAddress = "0xfa685308eae1822a5b9e3986c96b7414fbe4873b";
+  const contractABI = [
+    "function claimTokens() public",
+    "function faucetBalance() public view returns (uint256)",
+    "function timeUntilNextClaim(address user) public view returns (uint256)"
+  ];
+
+  let provider, signer, contract, userAddress;
+
+  async function connectWallet() {
+    try {
+      console.log("🦊 Connecting wallet...");
+      if (!window.ethereum) {
+        alert("MetaMask not detected!");
+        return;
+      }
+      provider = new ethers.providers.Web3Provider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      signer = provider.getSigner();
+      userAddress = await signer.getAddress();
+      document.getElementById("wallet").innerText = userAddress;
+      contract = new ethers.Contract(contractAddress, contractABI, signer);
+      console.log("✅ Wallet connected:", userAddress);
+      updateFaucetInfo();
+    } catch (err) {
+      console.error("⚠️ connectWallet error:", err);
+    }
+  }
+
+  async function claimTokens() {
+    try {
+      console.log("💰 Claiming tokens...");
+      if (!contract) await connectWallet();
+      const tx = await contract.claimTokens();
+      console.log("⏳ Transaction sent:", tx.hash);
+      alert("Transaction sent! Please wait for confirmation...");
+      await tx.wait();
+      console.log("✅ Transaction confirmed!");
+      alert("✅ 10 FASTCoin claimed successfully!");
+      updateFaucetInfo();
+    } catch (error) {
+      console.error("❌ claimTokens error:", error);
+      alert("❌ Transaction failed: " + (error.reason || "Check console"));
+    }
+  }
+
+  async function updateFaucetInfo() {
+    if (!contract) return;
+    console.log("🔍 Updating faucet info...");
+    const balance = await contract.faucetBalance();
+    document.getElementById("balance").innerText =
+      ethers.utils.formatEther(balance) + " FSC";
+
+    const timeLeft = await contract.timeUntilNextClaim(userAddress);
+    if (timeLeft == 0) {
+      document.getElementById("timer").innerText = "You can claim now!";
+    } else {
+      const hours = Math.floor(timeLeft / 3600);
+      const minutes = Math.floor((timeLeft % 3600) / 60);
+      document.getElementById("timer").innerText =
+        `${hours}h ${minutes}m remaining`;
+    }
+  }
+
+  setInterval(() => {
+    if (contract) updateFaucetInfo();
+  }, 20000);
+</script>
+
+
+</body>
+</html>
