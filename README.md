@@ -65,7 +65,7 @@ Steps
 
 1. Clone the repository:
 
-git clone https://github.com/yourusername/fastcoin-faucet.git
+git clone https://github.com/HuzaifaZkhan/fastcoin-faucet.git
 
 
 2. Open the folder and run a local server:
@@ -81,3 +81,4 @@ http://localhost:8000
 
 
 4. Click “Connect MetaMask” → then “Claim 10 FASTCoin”.
+
